@@ -203,7 +203,7 @@ module ActsAsBrandNewCopy
 
     def do_insert(klass, columns, hash_copies)
       connection = klass.connection
-      values_string = hash_copies.map do |hash_copy|
+      value_list = hash_copies.map do |hash_copy|
         quoted_copy_values = columns.map do |column|
           case column.name
           when 'updated_at', 'created_at'
@@ -212,9 +212,12 @@ module ActsAsBrandNewCopy
             connection.quote(hash_copy[column.name], column)
           end
         end
-        "(#{quoted_copy_values.join(',')})"
-      end.join(',')
-      result = connection.execute("INSERT INTO #{klass.table_name} (#{columns.map(&:name).join(',')}) VALUES #{values_string}")
+        "(#{quoted_copy_values.join(', ')})"
+      end
+      column_list = columns.map do |column|
+        connection.quote_column_name(column.name)
+      end
+      result = connection.execute("INSERT INTO #{connection.quote_table_name(klass.table_name)} (#{column_list.join(', ')}) VALUES #{value_list.join(', ')}")
       connection.last_inserted_id(result)
     end
 
