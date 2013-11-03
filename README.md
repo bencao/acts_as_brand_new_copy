@@ -5,24 +5,9 @@
 
 Copy an active record with its associated records are not easy.
 
-For example, if we have defined these classes:
+For example, if we have defined following classes:
 
 ```ruby
-class StudentTeacherAssignment < ActiveRecord::Base
-  belongs_to :teacher
-  belongs_to :student
-end
-
-class GradeTeacherAssignment < ActiveRecord::Base
-  belongs_to :grade
-  belongs_to :teacher
-end
-
-class GradeStudentAssignment < ActiveRecord::Base
-  belongs_to :grade
-  belongs_to :student
-end
-
 class Grade < ActiveRecord::Base
   has_and_belongs_to_many :teachers, :join_table => ::GradeTeacherAssignment.table_name
   has_and_belongs_to_many :students, :join_table => ::GradeStudentAssignment.table_name
@@ -48,7 +33,7 @@ class Score < ActiveRecord::Base
 end
 ```
 
-Can you copy a grade with its teachers and students to another grade in a few lines of code?
+Can you copy a grade with its teachers and students to another grade in a few lines of code, keeping the relationships between teachers and students?
 To me, it's no, consequently acts_as_brand_new_copy was born.
 
 ## Usage
