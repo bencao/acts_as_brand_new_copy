@@ -3,3 +3,7 @@ rvm:
   - "1.9.3"
   - "2.0.0"
 script: bundle exec rspec spec
+before_install:
+  - curl -O http://mirrors.kernel.org/ubuntu/pool/main/s/sqlite3/libsqlite3-0_3.7.13-1_amd64.deb
+  - curl -O http://mirrors.kernel.org/ubuntu/pool/main/s/sqlite3/sqlite3_3.7.13-1_amd64.deb
+  - sudo dpkg -i libsqlite3-0_3.7.13-1_amd64.deb sqlite3_3.7.13-1_amd64.deb
