@@ -5,18 +5,16 @@ module ActsAsBrandNewCopy
 
   class BrandNewCopyBuilder
 
-    def initialize(hash_origin, hash_copy)
-      @hash_origin  = hash_origin
-      @hash_copy    = hash_copy
+    def initialize(serialized_hash)
+      @hash_origin  = serialized_hash
+      @hash_copy    = JSON.parse(serialized_hash.to_json) # a way to do deep clone
       @save_order   = calculate_save_order
       @instances    = extract_instances
       @queue        = prepare_copy_queue
       @full_context = {
-        :root_hash_origin => @hash_origin,
-        :root_hash_copy   => @hash_copy,
-        :save_order       => @save_order,
-        :save_queue       => @queue,
-        :instances        => @instances
+        :save_order => @save_order,
+        :save_queue => @queue,
+        :instances  => @instances
       }
     end
 
@@ -42,6 +40,13 @@ module ActsAsBrandNewCopy
 
     def all_saved_instances
       @instances.values
+    end
+
+    def new_id(klass_name, old_id)
+      copy_object = find_object_by_old_id(klass_name, old_id)
+      return nil if copy_object.nil?
+      raise 'copy object not saved to db!' if copy_object['id'] == copy_object['id_before_copy']
+      copy_object['id']
     end
 
     private
@@ -248,13 +253,6 @@ module ActsAsBrandNewCopy
       @instances[object_key(klass_name, old_id)]
     end
 
-    def new_id(klass_name, old_id)
-      copy_object = find_object_by_old_id(klass_name, old_id)
-      return nil if copy_object.nil?
-      raise 'copy object not saved to db!' if copy_object['id'] == copy_object['id_before_copy']
-      copy_object['id']
-    end
-
     def update_object_by_old_id(klass_name, old_id, new_attributes)
       copy_object = find_object_by_old_id(klass_name, old_id)
       new_attributes.each_pair do |key, value|
@@ -428,14 +426,13 @@ module ActsAsBrandNewCopy
 
     eager_loaded_self = self.class.includes(final_options[:associations]).find(id)
 
-    hash_origin = eager_loaded_self.serialize_hash_for_copy(final_options[:associations])
-    hash_copy   = JSON.parse(hash_origin.to_json) # a way to do deep clone
+    serialized_hash = eager_loaded_self.serialize_hash_for_copy(final_options[:associations])
 
-    builder = BrandNewCopyBuilder.new(hash_origin, hash_copy)
+    builder = BrandNewCopyBuilder.new(serialized_hash)
     builder.invoke_callback(final_options[:callbacks])
     builder.save
 
-    return hash_copy['id']
+    return builder.new_id(self.class.name, self.id)
   end
 end
 
