@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-theme"
   spec.add_development_dependency "pry-nav"
-  spec.add_development_dependency "coveralls"
+  spec.add_development_dependency "codeclimate-test-reporter"
   spec.add_dependency "activesupport", "~> 3.2.13"
   spec.add_dependency "activerecord", "~> 3.2.13"
 end
