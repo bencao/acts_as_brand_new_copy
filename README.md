@@ -2,7 +2,8 @@
 
 [![Gem Version](https://badge.fury.io/rb/acts_as_brand_new_copy.png)](http://badge.fury.io/rb/acts_as_brand_new_copy)
 [![Build Status](https://travis-ci.org/bencao/acts_as_brand_new_copy.png)](https://travis-ci.org/bencao/acts_as_brand_new_copy)
-[![Coverage Status](https://coveralls.io/repos/bencao/acts_as_brand_new_copy/badge.svg)](https://coveralls.io/r/bencao/acts_as_brand_new_copy)
+[![Code Climate](https://codeclimate.com/github/bencao/acts_as_brand_new_copy/badges/gpa.svg)](https://codeclimate.com/github/bencao/acts_as_brand_new_copy)
+[![Test Coverage](https://codeclimate.com/github/bencao/acts_as_brand_new_copy/badges/coverage.svg)](https://codeclimate.com/github/bencao/acts_as_brand_new_copy)
 
 Copy an active record with its associated records are not easy.
 
