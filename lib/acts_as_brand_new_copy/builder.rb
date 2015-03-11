@@ -54,30 +54,33 @@ module ActsAsBrandNewCopy
 
     def invoke_callback_recursively(hash_origin_array, callbacks)
       hash_origin_array.each do |hash_origin|
-        raise 'hash_origin must be an hash' unless hash_origin.is_a?(Hash)
-
-        hash_klass = hash_origin['klass'].constantize
-
         callbacks.each do |callback|
           if callback.is_a?(Symbol)
-            unless hash_klass.send(callback, hash_origin, find_object_by_old_id(hash_origin['klass'], hash_origin['id_before_copy']), @full_context)
-              raise "run #{callback} callback failed, " +
-                " hash_origin=#{find_object_by_old_id(hash_origin['klass'], hash_origin['id_before_copy'])}"
-            end
-          elsif callback.is_a?(Hash)
-            path = Standard.absolute_klass_name(hash_klass.reflect_on_association(callback.keys.first).class_name)
-            path_callbacks = callback.values.first
-            invoke_callback_recursively(hash_partial_by_path(hash_origin, [path]), path_callbacks)
+            invoke_single_callback(callback, hash_origin)
+          else
+            child_association = callback.keys.first
+            child_callbacks   = callback.values.first
+            invoke_callback_recursively(
+              hash_child(hash_origin, child_association),
+              child_callbacks
+            )
           end
         end
       end
     end
 
-    def hash_partial_by_path(hash, path)
-      path_dup = path.dup
-      hash_partial = hash
-      hash_partial = hash_partial['associations'][path_dup.shift] while path_dup.present?
-      hash_partial
+    def invoke_single_callback(callback, hash_origin)
+      hash_klass = hash_origin['klass'].constantize
+      hash_copy = find_object_by_old_id(hash_origin['klass'], hash_origin['id_before_copy'])
+      unless hash_klass.send(callback, hash_origin, hash_copy, @full_context)
+        raise "run callback '#{callback}' failed on #{Standard.object_hash_to_s(hash_origin)}"
+      end
+    end
+
+    def hash_child(hash_origin, association)
+      hash_klass = hash_origin['klass'].constantize
+      name       = Standard.association_klass_name(hash_klass, association)
+      hash_origin['associations'][name]
     end
 
     def calculate_save_order

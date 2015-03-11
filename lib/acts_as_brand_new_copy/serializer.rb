@@ -4,9 +4,9 @@ require 'acts_as_brand_new_copy/standard'
 module ActsAsBrandNewCopy
   class Serializer
 
-    def initialize(record, associations = nil)
+    def initialize(record, associations = [])
       @record       = record
-      @associations = associations
+      @associations = associations || []
     end
 
     # sample associations = [
@@ -16,13 +16,12 @@ module ActsAsBrandNewCopy
     # ]
     def serialize
       hash = quoted_attributes_for_copy
-      return hash if @associations.nil?
 
       @associations.each do |association|
         if association.is_a?(Symbol)
           hash['dependencies'] = Merge.deep_merge(hash['dependencies'], serialize_dependencies(association))
-          hash['associations'] = Merge.deep_merge(hash['associations'], serialize_associations(association, nil))
-        elsif association.is_a?(Hash)
+          hash['associations'] = Merge.deep_merge(hash['associations'], serialize_associations(association, []))
+        else
           child_association        = association.keys.first
           child_association_option = association.values.first
           hash['dependencies'] = Merge.deep_merge(hash['dependencies'], serialize_dependencies(child_association))
@@ -65,7 +64,7 @@ module ActsAsBrandNewCopy
 
     def serialize_dependencies(association)
       reflection = @record.class.reflect_on_association(association)
-      class_name = Standard.absolute_klass_name(reflection.class_name)
+      class_name = Standard.reflection_association_name(reflection)
 
       # has_one through OR has_many through
       if reflection.through_reflection.present?
@@ -77,7 +76,7 @@ module ActsAsBrandNewCopy
 
     def serialize_associations(association, option)
       reflection = @record.class.reflect_on_association(association)
-      class_name = Standard.absolute_klass_name(reflection.class_name)
+      class_name = Standard.reflection_association_name(reflection)
 
       implicit_associations(reflection).merge(class_name => explicit_association(association, option))
     end
@@ -113,7 +112,7 @@ module ActsAsBrandNewCopy
     end
 
     def serialize_through_association(reflection)
-      name      = Standard.absolute_klass_name(reflection.through_reflection.class_name)
+      name      = Standard.reflection_association_name(reflection.through_reflection)
       key       = reflection.through_reflection.foreign_key
       records   = name.constantize.where("#{key} = #{@record.id}").to_a
 
@@ -121,20 +120,13 @@ module ActsAsBrandNewCopy
     end
 
     def copy_dependencies_for_through(reflection)
-      self_class        = Standard.absolute_klass_name(reflection.active_record.to_s)
-      association_class = Standard.absolute_klass_name(reflection.class_name)
-      join_table_class  = Standard.absolute_klass_name(reflection.through_reflection.class_name)
-      {
-        'key_position'                  => 'join_table',
-        'save_order_constraints'        => [
-          "#{self_class}_#{join_table_class}",
-          "#{association_class}_#{join_table_class}",
-          "#{association_class}_#{self_class}"
-        ],
-        'join_table_class'              => join_table_class,
-        'self_key_on_join_table'        => reflection.through_reflection.foreign_key,
-        'association_key_on_join_table' => reflection.source_reflection.foreign_key
-      }
+      copy_dependencies_for_join_type(
+        Standard.reflection_self_name(reflection),
+        Standard.reflection_association_name(reflection),
+        Standard.reflection_association_name(reflection.through_reflection),
+        reflection.through_reflection.foreign_key,
+        reflection.source_reflection.foreign_key
+      )
     end
 
     def copy_dependencies_for_macros(reflection)
@@ -151,9 +143,44 @@ module ActsAsBrandNewCopy
     end
 
     def copy_dependencies_for_has_and_belongs_to_many(reflection)
-      self_class        = Standard.absolute_klass_name(reflection.active_record.to_s)
-      association_class = Standard.absolute_klass_name(reflection.class_name)
-      join_table_class  = guess_join_table_class(reflection)
+      copy_dependencies_for_join_type(
+        Standard.reflection_self_name(reflection),
+        Standard.reflection_association_name(reflection),
+        guess_join_table_class(reflection),
+        reflection.foreign_key,
+        reflection.association_foreign_key
+      )
+    end
+
+    def copy_dependencies_for_has_one_or_has_many(reflection)
+      self_class                    = Standard.reflection_self_name(reflection)
+      association_class             = Standard.reflection_association_name(reflection)
+      self_key_on_association_table = reflection.foreign_key
+      {
+        'key_position'                  => 'association_table',
+        'save_order_constraints'        => ["#{self_class}_#{association_class}"],
+        'self_key_on_association_table' => self_key_on_association_table
+      }
+    end
+
+    def copy_dependencies_for_belongs_to(reflection)
+      self_class                    = Standard.reflection_self_name(reflection)
+      association_class             = Standard.reflection_association_name(reflection)
+      association_key_on_self_table = reflection.foreign_key
+      {
+        'key_position'                  => 'self_table',
+        'save_order_constraints'        => ["#{association_class}_#{self_class}"],
+        'association_key_on_self_table' => association_key_on_self_table
+      }
+    end
+
+    def copy_dependencies_for_join_type(
+          self_class,
+          association_class,
+          join_table_class,
+          self_key_on_join_table,
+          association_key_on_join_table
+        )
       {
         'key_position'                  => 'join_table',
         'save_order_constraints'        => [
@@ -162,28 +189,8 @@ module ActsAsBrandNewCopy
           "#{association_class}_#{self_class}"
         ],
         'join_table_class'              => join_table_class,
-        'self_key_on_join_table'        => reflection.foreign_key,
-        'association_key_on_join_table' => reflection.association_foreign_key
-      }
-    end
-
-    def copy_dependencies_for_has_one_or_has_many(reflection)
-      self_class        = Standard.absolute_klass_name(reflection.active_record.to_s)
-      association_class = Standard.absolute_klass_name(reflection.class_name)
-      {
-        'key_position'                  => 'association_table',
-        'save_order_constraints'        => ["#{self_class}_#{association_class}"],
-        'self_key_on_association_table' => reflection.foreign_key
-      }
-    end
-
-    def copy_dependencies_for_belongs_to(reflection)
-      self_class        = Standard.absolute_klass_name(reflection.active_record.to_s)
-      association_class = Standard.absolute_klass_name(reflection.class_name)
-      {
-        'key_position'                  => 'self_table',
-        'save_order_constraints'        => ["#{association_class}_#{self_class}"],
-        'association_key_on_self_table' => reflection.foreign_key
+        'self_key_on_join_table'        => self_key_on_join_table,
+        'association_key_on_join_table' => association_key_on_join_table
       }
     end
 
