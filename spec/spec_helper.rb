@@ -1,3 +1,6 @@
+require 'coveralls'
+Coveralls.wear!
+
 require 'active_support'
 require 'active_record'
 require 'sqlite3'
