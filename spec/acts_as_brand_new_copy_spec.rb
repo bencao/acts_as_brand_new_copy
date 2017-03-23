@@ -93,7 +93,7 @@ FactoryGirl.define do
     sequence(:name) {|n| "Student #{n}"}
 
     trait :with_scores do
-      after(:create) do |student, evaluator|
+      after(:create) do |student, _|
         FactoryGirl.create(:score, {:student => student, :value => "70"})
         FactoryGirl.create(:score, {:student => student, :value => "80"})
       end
@@ -194,7 +194,7 @@ describe ActsAsBrandNewCopy do
   context "callbacks" do
     [Grade, Teacher, Student].each do |klass|
       klass.class_eval do
-        def self.update_name_when_copy(hash_origin, hash_copy, full_context)
+        def self.update_name_when_copy(hash_origin, hash_copy, _)
           hash_copy['name'] = copy_of_name(hash_origin['name'])
           true
         end
@@ -206,7 +206,7 @@ describe ActsAsBrandNewCopy do
     end
 
     Score.class_eval do
-      def self.reset_value_when_copy(hash_origin, hash_copy, full_context)
+      def self.reset_value_when_copy(hash_origin, hash_copy, _)
         hash_copy['value'] = nil
         true
       end
