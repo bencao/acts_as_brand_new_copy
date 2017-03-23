@@ -201,7 +201,7 @@ module ActsAsBrandNewCopy
     def do_insert(klass, columns, hash_copies)
       connection = klass.connection
       value_list = hash_copies.map do |hash_copy|
-        quoted_copy_values = columns.map do |column|
+        columns.map do |column|
           case column.name
           when 'updated_at', 'created_at'
             'NOW()'
@@ -209,13 +209,41 @@ module ActsAsBrandNewCopy
             connection.quote(hash_copy[column.name], column)
           end
         end
-        "(#{quoted_copy_values.join(', ')})"
       end
       column_list = columns.map do |column|
         connection.quote_column_name(column.name)
       end
-      result = connection.execute("INSERT INTO #{connection.quote_table_name(klass.table_name)} (#{column_list.join(', ')}) VALUES #{value_list.join(', ')}")
+
+      adapter = ActiveRecord::Base.connection.instance_values["config"][:adapter]
+
+      sql =
+        if adapter.start_with?("sqlite")
+          sqlite_batch_insert(connection.quote_table_name(klass.table_name), column_list, value_list)
+        else
+          mysql_batch_insert(connection.quote_table_name(klass.table_name), column_list, value_list)
+        end
+
+      result = connection.execute(sql)
       connection.last_inserted_id(result)
+    end
+
+    def mysql_batch_insert(table_name, column_list, value_list)
+      <<-eos
+        INSERT INTO #{table_name} (#{column_list.join(', ')})
+          VALUES #{value_list.map{ |v| "(#{v.join(', ')})" }.join(', ')}
+      eos
+    end
+
+    def sqlite_batch_insert(table_name, column_list, value_list)
+      head, *tail = value_list
+
+      first_line = "SELECT #{head.map.with_index { |v, idx| "#{v} AS #{column_list[idx]}" }.join(', ')}"
+
+      remain_lines = tail.map do |values|
+        "UNION ALL SELECT #{values.join(', ')}"
+      end
+
+      "INSERT INTO #{table_name} (#{column_list.join(', ')}) #{first_line} #{remain_lines.join(" ")}"
     end
 
     def batch_insert_copy_auto_generate_ids(klass, hash_copy_slice)
