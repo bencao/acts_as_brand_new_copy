@@ -5,6 +5,10 @@ rvm:
   - 2.0.0
   - 1.9.3
 script: bundle exec rspec spec
+env:
+  - CODACY_PROJECT_TOKEN=b30b28f18ca3403094cb583cfb14cbc2
 addons:
   code_climate:
-    repo_token: aabca30776faa63b11d92820907d3f0718eea43795316189317956df4af19f29 
+    repo_token: aabca30776faa63b11d92820907d3f0718eea43795316189317956df4af19f29
+after_success:
+    - bundle exec codeclimate-test-reporter

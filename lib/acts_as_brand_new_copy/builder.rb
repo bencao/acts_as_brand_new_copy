@@ -122,7 +122,7 @@ module ActsAsBrandNewCopy
     end
 
     # breadth first
-    def traverse(&block)
+    def traverse
       not_visit = [@hash_copy]
       while (not_visit.size > 0)
         current_hash = not_visit.shift

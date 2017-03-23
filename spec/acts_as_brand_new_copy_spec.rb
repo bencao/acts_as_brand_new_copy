@@ -206,7 +206,7 @@ describe ActsAsBrandNewCopy do
     end
 
     Score.class_eval do
-      def self.reset_value_when_copy(hash_origin, hash_copy, _)
+      def self.reset_value_when_copy(_, hash_copy, _)
         hash_copy['value'] = nil
         true
       end

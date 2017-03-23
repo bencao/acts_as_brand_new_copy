@@ -1,5 +1,12 @@
-require "codeclimate-test-reporter"
-CodeClimate::TestReporter.start
+require 'simplecov'
+require 'codacy-coverage'
+
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
+    SimpleCov::Formatter::HTMLFormatter,
+    Codacy::Formatter
+])
+
+SimpleCov.start
 
 require 'active_support'
 require 'active_record'
