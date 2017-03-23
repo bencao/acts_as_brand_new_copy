@@ -88,7 +88,7 @@ module ActsAsBrandNewCopy
       traverse do |current_hash|
         klasses.add(current_hash['klass']) unless klasses.include?(current_hash['klass'])
 
-        current_hash['dependencies'].each_pair do |aso_name, aso_dependencies|
+        current_hash['dependencies'].each_pair do |_, aso_dependencies|
           aso_dependencies.each do |aso_dependency|
             aso_dependency['save_order_constraints'].each do |constraint_string|
               front, back = constraint_string.split('_')
@@ -127,7 +127,7 @@ module ActsAsBrandNewCopy
       while (not_visit.size > 0)
         current_hash = not_visit.shift
         yield current_hash
-        current_hash['associations'].each_pair do |aso_name, aso_hash_array|
+        current_hash['associations'].each_pair do |_, aso_hash_array|
           aso_hash_array.each{ |aso_hash| not_visit << aso_hash }
         end
       end
@@ -156,7 +156,7 @@ module ActsAsBrandNewCopy
     def prepare_copy_queue
       queue = ActiveSupport::OrderedHash.new
       @save_order.each{ |item| queue[item] = [] }
-      @instances.each_pair{ |key, hash| queue[hash['klass']] << hash }
+      @instances.each_pair{ |_, hash| queue[hash['klass']] << hash }
       queue
     end
 

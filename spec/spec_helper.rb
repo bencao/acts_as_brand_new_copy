@@ -8,7 +8,7 @@ require 'pry'
 require 'database_cleaner'
 require 'factory_girl'
 
-db_config = YAML::load(IO.read('db/database.yml'))
+db_config = YAML.load(IO.read('db/database.yml'))
 db_file = db_config['development']['database']
 File.delete(db_file) if File.exists?(db_file)
 ActiveRecord::Base.configurations = db_config
