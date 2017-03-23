@@ -1,9 +1,9 @@
 language: ruby
 rvm:
   - ruby-head
-  - 2.1.0
+  - 2.4.1
+  - 2.1.5
   - 2.0.0
-  - 1.9.3
 script: bundle exec rspec spec
 env:
   - CODACY_PROJECT_TOKEN=b30b28f18ca3403094cb583cfb14cbc2
