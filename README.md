@@ -1,5 +1,6 @@
 # acts_as_brand_new_copy
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b5969890eade43429a392baa7f883ec5)](https://www.codacy.com/app/bencao/acts_as_brand_new_copy?utm_source=github.com&utm_medium=referral&utm_content=bencao/acts_as_brand_new_copy&utm_campaign=badger)
 [![Gem Version](https://badge.fury.io/rb/acts_as_brand_new_copy.png)](http://badge.fury.io/rb/acts_as_brand_new_copy)
 [![Build Status](https://travis-ci.org/bencao/acts_as_brand_new_copy.png)](https://travis-ci.org/bencao/acts_as_brand_new_copy)
 [![Code Climate](https://codeclimate.com/github/bencao/acts_as_brand_new_copy/badges/gpa.svg)](https://codeclimate.com/github/bencao/acts_as_brand_new_copy)
